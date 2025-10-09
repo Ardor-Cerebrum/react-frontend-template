@@ -102,6 +102,17 @@ The template uses CSS variables for theming. Modify the colors in `src/index.css
 }
 ```
 
+### Environment Variables
+
+The template uses environment variables for configuration. Create a `.env` file in the root directory:
+
+```bash
+# Backend API Configuration
+VITE_API_URL=https://your-backend-url.com/api/v1
+```
+
+**Important:** All environment variables must be prefixed with `VITE_` to be accessible in the browser.
+
 ### Adding Components
 
 This template includes shadcn/ui components. To add more:
