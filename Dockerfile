@@ -18,8 +18,9 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Define ARG for port
+# Define ARG and ENV for port
 ARG PORT=1337
+ENV ARDOR_PORT=${ARDOR_PORT}
 
 # Copy nginx configuration template
 COPY nginx.conf /etc/nginx/nginx.conf
