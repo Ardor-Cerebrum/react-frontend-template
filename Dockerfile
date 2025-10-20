@@ -35,7 +35,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE ${PORT}
 
 #Define ENV for port
-ENV ARDOR_PORT=${ARDOR_PORT}
+ENV PORT=${PORT}
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
