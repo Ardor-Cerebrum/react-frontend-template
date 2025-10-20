@@ -24,6 +24,7 @@ ENV PORT=${PORT}
 
 # Copy nginx configuration template
 COPY nginx.conf /etc/nginx/nginx.conf
+RUN envsubst '$PORT' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf
 
 # Copy built app from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
@@ -31,5 +32,5 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Expose configurable port
 EXPOSE ${PORT}
 
-# Start nginx with envsubst to replace environment variables
-CMD ["/bin/sh", "-c", "envsubst '$PORT' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp && mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
