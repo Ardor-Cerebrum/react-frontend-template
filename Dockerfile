@@ -18,14 +18,24 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Copy nginx configuration
+# Define ARG for port
+ARG PORT=1337
+
+
+# Copy nginx configuration template
 COPY nginx.conf /etc/nginx/nginx.conf
+
+# Replace placeholder with actual port value during build
+RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf
 
 # Copy built app from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Expose port 3000
-EXPOSE 1337
+# Expose configurable port
+EXPOSE ${PORT}
+
+#Define ENV for port
+ENV PORT=${PORT}
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
