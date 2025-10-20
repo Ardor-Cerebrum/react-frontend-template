@@ -18,13 +18,14 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Define ARG and ENV for port
+# Define ARG for port
 ARG PORT=1337
-ENV PORT=${PORT}
 
 # Copy nginx configuration template
 COPY nginx.conf /etc/nginx/nginx.conf
-RUN envsubst '$PORT' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf
+
+# Replace placeholder with actual port value during build
+RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf
 
 # Copy built app from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
