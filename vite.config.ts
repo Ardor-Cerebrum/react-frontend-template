@@ -6,7 +6,8 @@ import path from "path";
 export default defineConfig({
   server: {
     host: '0.0.0.0',
-    port: parseInt(process.env.PORT)
+    port: parseInt(process.env.PORT),
+    allowedHosts: [".ardor.cloud"]
   },
   plugins: [react()],
   resolve: {
