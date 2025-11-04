@@ -8,9 +8,6 @@ export default defineConfig({
     host: '0.0.0.0',
     port: parseInt(process.env.PORT),
     allowedHosts: [".ardor.cloud"],
-    watch: {
-      usePolling: true
-    }
   },
   plugins: [react()],
   resolve: {
