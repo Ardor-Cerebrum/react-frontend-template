@@ -16,6 +16,7 @@ A modern, production-ready React frontend template built with the latest technol
 - **ESLint & Prettier** for code quality
 - **Component composition** patterns
 - **Docker support** for containerized deployment
+- **Vitest & React Testing Library** for comprehensive testing
 
 ## 🛠️ Tech Stack
 
@@ -28,6 +29,7 @@ A modern, production-ready React frontend template built with the latest technol
 - **Form Handling:** React Hook Form + Zod
 - **Icons:** Lucide React
 - **Development:** ESLint + TypeScript ESLint
+- **Testing:** Vitest + React Testing Library
 
 ## 🚦 Getting Started
 
@@ -74,6 +76,10 @@ src/
 ├── hooks/              # Custom React hooks
 ├── lib/                # Utility functions
 ├── pages/              # Page components
+├── __tests__/          # Test utilities and fixtures
+│   ├── fixtures/       # Reusable test data
+│   ├── utils/          # Test utilities (custom render, etc.)
+│   └── setupTests.ts   # Global test setup
 ├── App.tsx             # Main App component
 ├── main.tsx           # React entry point
 └── index.css          # Global styles
@@ -86,6 +92,10 @@ src/
 - `npm run build:dev` - Build for development
 - `npm run preview` - Preview production build locally
 - `npm run lint` - Run ESLint
+- `npm test` - Run tests once
+- `npm run test:watch` - Run tests in watch mode
+- `npm run test:ui` - Run tests with UI
+- `npm run test:coverage` - Run tests with coverage report
 
 ## 🎨 Customization
 
@@ -153,6 +163,36 @@ docker run -p 3000:3000 react-frontend-template
 ```
 
 The application will be available at http://localhost:3000
+
+## 🧪 Testing
+
+This template includes a comprehensive testing setup with Vitest and React Testing Library.
+
+### Running Tests
+
+```bash
+# Run tests once
+npm test
+
+# Run tests in watch mode (recommended for development)
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Writing Tests
+
+See [src/__tests__/README.md](src/__tests__/README.md) for detailed testing guidelines, examples, and best practices.
+
+Key features:
+- Custom render function with all providers (QueryClient, Router, etc.)
+- Reusable fixtures for consistent test data
+- Example tests for components and pages
+- Proper TypeScript support
 
 ## 🤝 Contributing
 
