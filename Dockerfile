@@ -18,15 +18,16 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Define ARG for port
+# Define ARG for port and backend URL
 ARG PORT=1337
-
+ARG BACKEND_URL=""
 
 # Copy nginx configuration template
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Replace placeholder with actual port value during build
-RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf
+# Replace placeholders with actual values during build
+RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf && \
+    sed -i "s|\${BACKEND_URL}|${BACKEND_URL}|g" /etc/nginx/nginx.conf
 
 # Copy built app from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
@@ -34,8 +35,9 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Expose configurable port
 EXPOSE ${PORT}
 
-#Define ENV for port
+# Define ENV for runtime
 ENV PORT=${PORT}
+ENV BACKEND_URL=${BACKEND_URL}
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

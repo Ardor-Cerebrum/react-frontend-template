@@ -5,11 +5,17 @@
 
 export const config = {
   // API Configuration
-  apiBaseUrl: import.meta.env.VITE_API_URL,
+  // ⚠️ DEPRECATED when using reverse proxy approach
+  // Recommended: Use reverse proxy and relative paths like fetch('/api/users')
+  // This field can be used if you need direct API calls (not recommended for production)
+  apiBaseUrl: import.meta.env.VITE_API_URL || '',
   
-  // Environment
+  // Environment flags
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
+  
+  // Add your feature flags and non-sensitive config here
+  // Example: enableBetaFeatures: import.meta.env.VITE_ENABLE_BETA === 'true',
 } as const;
 
 // Type-safe environment variable access

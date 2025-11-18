@@ -2,20 +2,30 @@
 
 ## Introduction
 
-This document provides comprehensive guidance for AI agents and developers on using and extending the Ardor React Frontend Template. This template is designed as a modern, production-ready starting point for React applications, incorporating best practices for scalability, maintainability, and developer experience.
-
-The template integrates TypeScript, Vite, Tailwind CSS, shadcn/ui components, and other industry-standard tools to accelerate development while maintaining high code quality.
+Production-ready React application template with TypeScript, Vite, Tailwind CSS, and shadcn/ui. Designed for AI agents and developers building scalable web applications.
 
 ## Project Overview
 
-The Ardor template is a full-stack-ready frontend application template that emphasizes:
+**Features:**
+- Strict TypeScript configuration
+- Vite build optimization
+- shadcn/ui components (Radix UI)
+- Tailwind CSS mobile-first design
+- Hot reload, ESLint, comprehensive tooling
+- Modular architecture
+- Frontend-only or full-stack deployment
 
-- **Type Safety**: Strict TypeScript configuration
-- **Performance**: Optimized build with Vite
-- **Accessibility**: shadcn/ui components built on Radix UI primitives
-- **Responsive Design**: Mobile-first approach with Tailwind CSS
-- **Developer Experience**: Hot reload, linting, and comprehensive tooling
-- **Scalability**: Modular architecture with clear separation of concerns
+### API Integration
+
+**Rule:** Use reverse proxy for all API connections (own backend, Firebase, Supabase, third-party APIs).
+
+**Reverse proxy benefits:**
+- Hide API keys from browser
+- Eliminate CORS issues (same origin)
+- Enable security and rate limiting
+- Centralize logging
+
+Configuration details: [API Integration and Reverse Proxy](#api-integration-and-reverse-proxy)
 
 ## Tech Stack
 
@@ -77,244 +87,381 @@ The Ardor template is a full-stack-ready frontend application template that emph
 ## Configuration Files
 
 ### Vite Configuration (`vite.config.ts`)
-- **Path Aliases**: `@/` maps to `./src/`
-- **Server Config**: Host `0.0.0.0`, port from `PORT` env var
-- **React Plugin**: Uses SWC for faster compilation
-- **Build Optimization**: Tree shaking and minification enabled
+- Path alias: `@/` → `./src/`
+- Server: Host `0.0.0.0`, port from `PORT` (default: 1337)
+- `allowedHosts: [".ardor.cloud"]` - prevents DNS rebinding attacks (dev server security, not API-related)
+- Proxy: Auto-configures when `BACKEND_URL` set (dev only)
+- React plugin: SWC compilation
+- Build: Tree shaking, minification
 
 ### TypeScript Configuration
-- **Base Config** (`tsconfig.json`): Project references and path mapping
-- **App Config** (`tsconfig.app.json`): React application settings
-- **Node Config** (`tsconfig.node.json`): Build tools configuration
-- **Strict Mode**: Disabled for flexibility, but recommended to enable for production
+- `tsconfig.json` - Project references, path mapping
+- `tsconfig.app.json` - React application settings
+- `tsconfig.node.json` - Build tools configuration
+- Strict mode disabled (enable for production recommended)
 
 ### Tailwind CSS Configuration (`tailwind.config.ts`)
-- **Dark Mode**: Class-based theme switching
-- **Content Paths**: Scans `src/**/*.{ts,tsx}` for classes
-- **Custom Colors**: Extends with CSS variables for theming
-- **Animations**: Custom keyframes for smooth transitions
+- Dark mode: Class-based switching
+- Content: Scans `src/**/*.{ts,tsx}`
+- Colors: CSS variables for theming
+- Animations: Custom keyframes
 
 ### ESLint Configuration (`eslint.config.js`)
-- **Rules**: React hooks and refresh plugins
-- **Ignores**: `dist/` directory excluded
-- **TypeScript**: Full TypeScript support with recommended rules
+- Rules: React hooks, refresh plugins
+- Ignores: `dist/`
+- TypeScript support with recommended rules
 
 ### shadcn/ui Configuration (`components.json`)
-- **Style**: Default theme
-- **TSX**: Enabled for TypeScript
-- **Aliases**: Pre-configured for components, utils, hooks
+- Default theme, TSX enabled
+- Pre-configured aliases: components, utils, hooks
 
 ## Source Code Organization
 
-### Entry Point (`src/main.tsx`)
-Standard React 18 entry point using `createRoot`. Imports global CSS and renders the App component.
+### `src/main.tsx`
+React 18 entry point. Uses `createRoot`, imports global CSS, renders App.
 
-### App Component (`src/App.tsx`)
-Central application component providing:
-- **QueryClientProvider**: React Query context
-- **TooltipProvider**: Global tooltip context
-- **Toaster Components**: Notification systems (shadcn/ui and Sonner)
-- **BrowserRouter**: Client-side routing setup
-- **Route Configuration**: Index and 404 routes
+### `src/App.tsx`
+- Providers: QueryClient, Tooltip
+- Toasters: shadcn/ui, Sonner
+- Router: BrowserRouter
+- Routes: Index, 404
 
-### Pages (`src/pages/`)
-- **Index.tsx**: Landing/home page
-- **NotFound.tsx**: 404 error page with logging
-- **Routing Convention**: Add new routes above the catch-all `*` route
+### `src/pages/`
+- `Index.tsx` - Home page
+- `NotFound.tsx` - 404 with logging
+- Convention: Add routes above `*` catch-all
 
-### Components (`src/components/`)
-- **ui/**: shadcn/ui components (do not modify directly)
-- **Custom Components**: Place in subdirectories or root of components/
-- **Naming**: PascalCase for component files and directories
+### `src/components/`
+- `ui/` - shadcn/ui components (do not modify)
+- Custom components in subdirectories
+- Naming: PascalCase
 
-### Hooks (`src/hooks/`)
-- **use-mobile.tsx**: Responsive breakpoint detection
-- **use-toast.ts**: Toast notification hook (from shadcn/ui)
-- **Custom Hooks**: Place additional hooks here
+### `src/hooks/`
+- `use-mobile.tsx` - Breakpoint detection (< 768px)
+- `use-toast.ts` - Toast notifications
+- Custom hooks location
 
-### Utilities (`src/lib/`)
-- **utils.ts**: `cn()` function for class merging
-- **config.ts**: Environment configuration and constants
-- **Additional Utils**: Database helpers, API clients, etc.
+### `src/lib/`
+- `utils.ts` - `cn()` for class merging
+- `config.ts` - Client config (feature flags, environment)
+  - Use for: feature flags, public settings
+  - Never: API keys, secrets, backend URLs
+  - `apiBaseUrl` deprecated (use relative paths with reverse proxy)
 
 ## Styling and Theming
 
-### CSS Variables (`src/index.css`)
-- **Design System**: All colors defined as HSL values
-- **Themes**: Light and dark mode variants
-- **Custom Properties**: Gradients, shadows, transitions
-- **Base Styles**: Global typography and resets
+### `src/index.css`
+- Colors: HSL values
+- Themes: Light and dark mode
+- Custom properties: gradients, shadows, transitions
+- Global typography and resets
 
-### Tailwind Integration
-- **Utility Classes**: Direct application in JSX
-- **Custom Classes**: Use `@layer components` for reusable styles
-- **Responsive Design**: Mobile-first with `sm:`, `md:`, `lg:` prefixes
+### Tailwind
+- Utility classes in JSX
+- `@layer components` for reusable styles
+- Responsive: `sm:`, `md:`, `lg:` prefixes
 
 ### Theme Switching
-- Uses `next-themes` for persistent theme storage
-- CSS variables automatically update based on `class="dark"`
-- Components adapt automatically to theme changes
+- `next-themes` for persistence
+- CSS variables update on `class="dark"`
+- Auto component adaptation
 
-## Components and UI
+## Components
 
-### shadcn/ui Components
-Pre-installed components include:
-- Form controls (Button, Input, Select, etc.)
-- Layout (Card, Sheet, Dialog, etc.)
-- Navigation (Tabs, Breadcrumb, etc.)
-- Feedback (Toast, Alert, Progress, etc.)
-- Data display (Table, Chart, etc.)
+### shadcn/ui (Pre-installed)
+Form controls, Layout, Navigation, Feedback, Data display
 
-### Adding New Components
-```bash
-npx shadcn-ui@latest add [component-name]
-```
+Add components: `npx shadcn-ui@latest add [component-name]`
 
-### Component Patterns
-- **Composition**: Use `children` and render props
-- **Variants**: Use `class-variance-authority` for style variants
-- **Forward Refs**: For form controls and focus management
-- **TypeScript**: Strict typing for props and events
+### Patterns
+- Composition with `children`, render props
+- Variants via `class-variance-authority`
+- Forward refs for form controls
+- Strict TypeScript typing
 
 ## Hooks and Utilities
 
-### Custom Hooks
-- **useIsMobile**: Returns boolean for mobile breakpoint (< 768px)
-- **Toast Hooks**: From shadcn/ui for notifications
+### Hooks
+- `useIsMobile` - Boolean for < 768px
+- `useToast` - Notifications
 
-### Utility Functions
-- **cn()**: Merges Tailwind classes intelligently
-- **Configuration**: Type-safe environment access
+### Utils
+- `cn()` - Tailwind class merging
+- `config` - Feature flags, environment (no secrets)
 
-### Best Practices
-- **Custom Hooks**: Extract reusable logic from components
-- **Memoization**: Use `useMemo` and `useCallback` for performance
-- **Side Effects**: Prefer React Query for server state
+**Config usage:**
+```typescript
+// Feature flags
+if (config.isDevelopment) {
+  console.log('Debug mode enabled');
+}
 
-## Pages and Routing
+// API calls - use relative paths with reverse proxy
+const response = await fetch('/api/users');
+```
 
-### Route Structure
-- **Flat Routing**: All routes defined in `App.tsx`
-- **Index Route**: `/` maps to `Index` component
-- **404 Handling**: Catch-all route with `NotFound` component
+## Routing
 
-### Adding New Routes
-1. Create page component in `src/pages/`
+### Structure
+- All routes in `App.tsx`
+- `/` → `Index` component
+- `*` → `NotFound` (404)
+
+### Adding Routes
+1. Create component in `src/pages/`
 2. Import in `App.tsx`
-3. Add `<Route path="/new-route" element={<NewPage />} />`
-4. Place above the `*` catch-all route
+3. Add `<Route path="/new" element={<New />} />` above `*` catch-all
 
 ### Navigation
-- Use `Link` from `react-router-dom` for internal navigation
-- Use `useNavigate` hook for programmatic navigation
-- Use `useLocation` for current route information
+- `Link` - Internal links
+- `useNavigate` - Programmatic
+- `useLocation` - Current route
+
+## API Integration and Reverse Proxy
+
+Use reverse proxy for all API connections (own backend, Firebase, Supabase, third-party APIs).
+
+**Benefits:**
+- Hide API keys from browser
+- No CORS (same origin)
+- Centralized logging, rate limiting
+- Provider switching without frontend changes
+
+### Development
+
+`.env`:
+```env
+BACKEND_URL=http://localhost:8000
+```
+
+`vite.config.ts` (pre-configured):
+```typescript
+const env = loadEnv(mode, process.cwd(), '');
+
+proxy: env.BACKEND_URL ? {
+  '/api': { target: env.BACKEND_URL, changeOrigin: true },
+  '/ws': { target: env.BACKEND_URL.replace('http', 'ws'), ws: true },
+} : undefined
+```
+
+**Notes:**
+- `BACKEND_URL` (no `VITE_` prefix) - vite.config only, not exposed to browser
+- `/api` prefix preserved in dev and prod
+- Never put secrets in `VITE_*` variables (visible in browser)
+
+**Example Express proxy for external APIs:**
+```typescript
+// backend/server.ts
+import express from 'express';
+const app = express();
+
+app.get('/api/*', async (req, res) => {
+  const url = `https://api.supabase.co${req.path.replace('/api', '')}`;
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
+      'apikey': process.env.SUPABASE_ANON_KEY,
+    }
+  });
+  res.json(await response.json());
+});
+app.listen(8000);
+```
+
+### Production
+
+Dockerfile:
+```dockerfile
+FROM nginx:alpine
+ARG PORT=1337
+ARG BACKEND_URL=http://backend-service:8000
+
+COPY nginx.conf /etc/nginx/nginx.conf
+RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf && \
+    sed -i "s|\${BACKEND_URL}|${BACKEND_URL}|g" /etc/nginx/nginx.conf
+
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE ${PORT}
+ENV PORT=${PORT} BACKEND_URL=${BACKEND_URL}
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+nginx.conf:
+```nginx
+server {
+    listen ${PORT};
+    root /usr/share/nginx/html;
+
+    location /api {
+        proxy_pass ${BACKEND_URL};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    location /ws {
+        proxy_pass ${BACKEND_URL}/ws;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+Application code:
+```typescript
+// src/hooks/useUser.ts
+export const useUser = (id: string) => {
+  return useQuery({
+    queryKey: ["user", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) throw new Error('Failed to fetch user');
+      return res.json();
+    },
+  });
+};
+```
+
+### Trade-offs
+
+**Advantages:**
+- Security: Backend URL hidden
+- No CORS (same origin)
+- Single entry point
+- Load balancing, SSL termination, rate limiting
+
+**Disadvantages:**
+- Additional network hop (minimal latency)
+- More complex configuration
+- Nginx as single point of failure
+
+Note: Static sites without API calls can skip reverse proxy.
+
+### Environment Variables
+
+Frontend `.env`:
+```env
+BACKEND_URL=http://localhost:8000
+```
+
+Backend `.env`:
+```env
+SUPABASE_SECRET_KEY=your_key
+FIREBASE_ADMIN_KEY=your_key
+DATABASE_URL=postgresql://...
+```
+
+Docker build:
+```bash
+docker build \
+  --build-arg BACKEND_URL=http://backend:8000 \
+  -t app .
+```
 
 ## Build and Deployment
 
-### Development
+Commands:
 ```bash
-npm run dev  # Start dev server on port 8080
+npm run dev      # Dev server (PORT env, default: 1337)
+npm run build    # Production build
+npm run preview  # Preview build
 ```
 
-### Production Build
-```bash
-npm run build       # Production build
-npm run build:dev   # Development build
-npm run preview     # Preview production build
-```
-
-### Docker Deployment
-- **Dockerfile**: Multi-stage build with Nginx
-- **nginx.conf**: Optimized for SPA routing and caching
-- **Environment**: Configurable via `PORT` environment variable
+### Docker
+- Multi-stage build with Nginx
+- Build args: `PORT` (1337), `BACKEND_URL`
+- SPA routing, caching, reverse proxy configured
 
 ### Static Hosting
-- **Vercel/Netlify**: Direct deployment of `dist/` folder
-- **GitHub Pages**: Use build output
-- **SPA Routing**: Server configured for client-side routing
+- Vercel/Netlify/GitHub Pages: Deploy `dist/`
+- For API calls: Separate backend or platform edge functions
 
 ## Development Workflow
 
 ### Code Quality
-- **Linting**: `npm run lint` with ESLint
-- **Type Checking**: Integrated with TypeScript
-- **Formatting**: Consistent with Prettier (via ESLint)
+```bash
+npm run lint     # ESLint
+```
+Type checking: Integrated with TypeScript
 
 ### Environment Variables
-- **Prefix**: All client variables must start with `VITE_`
-- **Access**: Use `import.meta.env.VITE_*`
-- **Configuration**: Centralized in `src/lib/config.ts`
 
-### Git Workflow
-- **Branching**: Feature branches from `main`
-- **Commits**: Conventional commit messages
-- **PRs**: Code review required
-
-## Best Practices for Extension
-
-### Component Development
-1. **Start with shadcn/ui**: Check if component exists
-2. **Type Safety**: Define strict prop interfaces
-3. **Accessibility**: Use Radix primitives for a11y
-4. **Responsive**: Mobile-first design
-5. **Performance**: Memoize expensive operations
-
-### State Management
-1. **Local State**: `useState` for component state
-2. **Server State**: React Query for API data
-3. **Global State**: Context or Zustand for app-wide state
-4. **Forms**: React Hook Form with Zod validation
-
-### API Integration
-1. **React Query**: For data fetching and mutations
-2. **Error Handling**: Use error boundaries and toast notifications
-3. **Loading States**: Skeleton components and loading indicators
-4. **Caching**: Leverage React Query's intelligent caching
-
-### Styling Guidelines
-1. **Tailwind First**: Use utility classes
-2. **CSS Variables**: For theme values
-3. **Component Variants**: Use CVA for style variations
-4. **Dark Mode**: Automatic support via CSS variables
-
-### File Organization
-1. **Feature Folders**: Group related files
-2. **Index Files**: Barrel exports for clean imports
-3. **Type Definitions**: Colocate with components
-4. **Constants**: Group in `lib/` or feature folders
-
-### Performance Optimization
-1. **Code Splitting**: Lazy load routes and heavy components
-2. **Bundle Analysis**: Monitor bundle size
-3. **Image Optimization**: Use appropriate formats and sizes
-4. **Memoization**: Prevent unnecessary re-renders
-
-## Examples
-
-### Adding a New Page
-```tsx
-// src/pages/Dashboard.tsx
-const Dashboard = () => {
-  return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      {/* Page content */}
-    </div>
-  );
-};
-
-export default Dashboard;
+`.env`:
+```env
+PORT=1337
+BACKEND_URL=http://localhost:8000  # vite.config only
+VITE_ENABLE_DEBUG=false            # Browser-accessible
 ```
 
-```tsx
-// src/App.tsx (add route)
-import Dashboard from "./pages/Dashboard";
+**Rules:**
+- `VITE_*` - Exposed to browser (feature flags, public settings only)
+- No `VITE_` - Node.js only (vite.config.ts)
+- Never put secrets in `VITE_*` (visible in browser)
+- Store secrets on backend only
+- Restart dev server after changes
 
-// Inside Routes:
+## Best Practices
+
+### Components
+- Start with shadcn/ui
+- Strict TypeScript prop interfaces
+- Radix primitives for accessibility
+- Mobile-first, memoize expensive ops
+
+### State
+- Local: `useState`
+- Server: React Query
+- Global: Context/Zustand
+- Forms: React Hook Form + Zod
+
+### API
+- Always use reverse proxy
+- React Query for fetching
+- Relative paths `/api/*`
+- Error boundaries, toast notifications
+- Loading states, caching
+
+### Styling
+- Tailwind utility classes
+- CSS variables for themes
+- CVA for variants
+- Dark mode via CSS variables
+
+### File Organization
+- Feature folders, barrel exports
+- Colocate types with components
+- Constants in `lib/`
+
+### Performance
+- Code splitting, lazy loading
+- Monitor bundle size
+- Optimize images
+- Memoization
+
+## Code Examples
+
+### New Page
+```tsx
+// src/pages/Dashboard.tsx
+const Dashboard = () => (
+  <div className="container mx-auto py-8">
+    <h1 className="text-3xl font-bold">Dashboard</h1>
+  </div>
+);
+export default Dashboard;
+
+// src/App.tsx
 <Route path="/dashboard" element={<Dashboard />} />
 ```
 
-### Creating a Custom Component
+### Custom Component
 ```tsx
 // src/components/CustomButton.tsx
 import { Button, type ButtonProps } from "@/components/ui/button";
@@ -324,69 +471,47 @@ interface CustomButtonProps extends ButtonProps {
   variant?: "primary" | "secondary";
 }
 
-export const CustomButton = ({ 
-  className, 
-  variant = "primary", 
-  ...props 
-}: CustomButtonProps) => {
-  return (
-    <Button
-      className={cn(
-        variant === "primary" && "bg-primary hover:bg-primary/90",
-        variant === "secondary" && "bg-secondary hover:bg-secondary/90",
-        className
-      )}
-      {...props}
-    />
-  );
-};
+export const CustomButton = ({ className, variant = "primary", ...props }: CustomButtonProps) => (
+  <Button
+    className={cn(
+      variant === "primary" && "bg-primary hover:bg-primary/90",
+      variant === "secondary" && "bg-secondary hover:bg-secondary/90",
+      className
+    )}
+    {...props}
+  />
+);
 ```
 
-### Using React Query
+### React Query
 ```tsx
 // src/hooks/useUser.ts
-import { useQuery } from "@tanstack/react-query";
-
 export const useUser = (id: string) => {
   return useQuery({
     queryKey: ["user", id],
     queryFn: async () => {
-      const response = await fetch(`${config.apiBaseUrl}/users/${id}`);
-      return response.json();
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
     },
   });
 };
 ```
 
-### Form with Validation
+### Form Validation
 ```tsx
 // src/components/LoginForm.tsx
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
-const loginSchema = z.object({
+const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
 });
 
-type LoginForm = z.infer<typeof loginSchema>;
-
 export const LoginForm = () => {
-  const form = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
-  });
-
-  const onSubmit = (data: LoginForm) => {
-    console.log(data);
-  };
-
+  const form = useForm({ resolver: zodResolver(schema) });
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Input {...form.register("email")} placeholder="Email" />
-      <Input {...form.register("password")} type="password" placeholder="Password" />
+    <form onSubmit={form.handleSubmit(console.log)}>
+      <Input {...form.register("email")} />
+      <Input {...form.register("password")} type="password" />
       <Button type="submit">Login</Button>
     </form>
   );
@@ -395,37 +520,40 @@ export const LoginForm = () => {
 
 ## Troubleshooting
 
-### Common Issues
-
-**Build Errors**
-- Check TypeScript errors: `npx tsc --noEmit`
-- Verify dependencies: `npm install`
+### Build
+- TypeScript errors: `npx tsc --noEmit`
+- Dependencies: `npm install`
 - Clear cache: `rm -rf node_modules/.vite`
 
-**Styling Issues**
-- Verify Tailwind classes are in content paths
-- Check CSS variable definitions
-- Ensure dark mode class is applied to html/body
+### Styling
+- Verify Tailwind in content paths
+- Check CSS variables
+- Confirm dark mode class on html/body
 
-**Component Issues**
-- Verify shadcn/ui installation: `npx shadcn-ui@latest diff`
+### Components
+- shadcn/ui: `npx shadcn-ui@latest diff`
 - Check Radix UI peer dependencies
-- Ensure proper TypeScript types
+- Verify TypeScript types
 
-**Routing Issues**
-- Confirm routes are added above catch-all
-- Check BrowserRouter wrapping
-- Verify component exports
+### Routing
+- Routes above `*` catch-all
+- BrowserRouter wrapping
+- Component exports
 
-### Performance Issues
-- Use React DevTools Profiler
-- Check bundle size with `npm run build`
-- Optimize images and assets
-- Implement code splitting for large components
+### Performance
+- React DevTools Profiler
+- Bundle size: `npm run build`
+- Optimize images
+- Code splitting
 
-### Environment Issues
-- Verify `VITE_` prefix on client variables
-- Check `.env` file location (project root)
-- Restart dev server after env changes
+### Environment
+- `VITE_` prefix for client variables
+- `.env` in project root
+- Restart dev server after changes
 
-This documentation provides a comprehensive foundation for extending the Ardor template. Follow these guidelines to maintain code quality, performance, and developer experience while building robust React applications.
+### API/Network
+- CORS: Use reverse proxy
+- 404: Check `vite.config.ts` (dev) and `nginx.conf` (prod)
+- Connection refused: Verify backend URL
+- Timeouts: Adjust nginx.conf settings
+- Exposed keys: Never use `VITE_API_URL`, use reverse proxy
