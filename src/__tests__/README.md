@@ -17,10 +17,15 @@ src/__tests__/
 
 ### Running Tests
 
-**Available test scripts:**
-- `test` - Run tests once
-- `test:watch` - Run tests in watch mode (recommended for development)
-- `test:ui` - Run tests with UI
+```bash
+# Run tests once
+npm test
+
+# Run tests in watch mode (recommended for development)
+npm run test:watch
+
+# Run tests with UI
+npm run test:ui
 
 # Run tests with coverage report
 npm run test:coverage
