@@ -64,7 +64,7 @@ yarn dev
 pnpm dev
 ```
 
-4. Open [http://localhost:1337](http://localhost:1337) in your browser
+4. Open [http://localhost:8080](http://localhost:8080) in your browser.
 
 ## 📁 Project Structure
 
@@ -114,19 +114,14 @@ The template uses CSS variables for theming. Modify the colors in `src/index.css
 
 ### Environment Variables
 
-The template uses environment variables for client-side configuration. Create a `.env` file in the root directory:
+The template uses environment variables for configuration. Create a `.env` file in the root directory:
 
-```env
-# Feature flags and public config only
-VITE_ENABLE_DEBUG=false
-VITE_APP_VERSION=1.0.0
+```bash
+# Backend API Configuration
+VITE_API_URL=https://your-backend-url.com/api/v1
 ```
 
-**Important:** 
-- All environment variables must be prefixed with `VITE_` to be accessible in the browser
-- Never put API keys or secrets in `VITE_*` variables - they're visible in the bundle
-- For API calls, use nginx reverse proxy with relative paths (`/api/*`)
-- See `ARDOR.md` for complete API integration documentation
+**Important:** All environment variables must be prefixed with `VITE_` to be accessible in the browser.
 
 ### Adding Components
 
@@ -168,8 +163,6 @@ docker run -p 3000:3000 react-frontend-template
 ```
 
 The application will be available at http://localhost:3000
-
-For production deployment with backend services, see `ARDOR.md` and `NGINX_REVERSE_PROXY.md`.
 
 ## 🧪 Testing
 
