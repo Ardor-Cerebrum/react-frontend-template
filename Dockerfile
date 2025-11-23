@@ -18,16 +18,19 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Define ARG for port and backend URL
+# Build args for nginx configuration
 ARG PORT=1337
-ARG BACKEND_URL=""
+ARG BACKEND_URL=""  # Leave empty for static-only, or set default: "http://backend:{PORT}}"
 
-# Copy nginx configuration template
+# Copy nginx configuration template and substitute variables
 COPY nginx.conf /etc/nginx/nginx.conf
-
-# Replace placeholders with actual values during build
 RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf && \
-    sed -i "s|\${BACKEND_URL}|${BACKEND_URL}|g" /etc/nginx/nginx.conf
+    if [ -z "$BACKEND_URL" ]; then \
+      # If no backend, use dummy URL (502 on /api calls - expected for static frontend)
+      sed -i "s|\${BACKEND_URL}|http://127.0.0.1:9999|g" /etc/nginx/nginx.conf; \
+    else \
+      sed -i "s|\${BACKEND_URL}|${BACKEND_URL}|g" /etc/nginx/nginx.conf; \
+    fi
 
 # Copy built app from build stage
 COPY --from=build /app/dist /usr/share/nginx/html

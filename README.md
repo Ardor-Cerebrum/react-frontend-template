@@ -40,31 +40,10 @@ A modern, production-ready React frontend template built with the latest technol
 
 ### Installation
 
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd react-frontend-template
-```
-
-2. Install dependencies:
-```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
-```
-
-3. Start the development server:
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
-
-4. Open [http://localhost:8080](http://localhost:8080) in your browser.
+1. Clone the repository
+2. Install dependencies using npm, yarn, or pnpm
+3. Start the development server using `dev` script
+4. Open [http://localhost:1337](http://localhost:1337) in your browser
 
 ## 📁 Project Structure
 
@@ -114,55 +93,34 @@ The template uses CSS variables for theming. Modify the colors in `src/index.css
 
 ### Environment Variables
 
-The template uses environment variables for configuration. Create a `.env` file in the root directory:
+The template uses environment variables for client-side configuration. Create a `.env` file in the root directory:
 
-```bash
-# Backend API Configuration
-VITE_API_URL=https://your-backend-url.com/api/v1
+```env
+# Feature flags and public config only
+VITE_ENABLE_DEBUG=false
+VITE_APP_VERSION=1.0.0
 ```
 
-**Important:** All environment variables must be prefixed with `VITE_` to be accessible in the browser.
+**Important:** 
+- All environment variables must be prefixed with `VITE_` to be accessible in the browser
+- Never put API keys or secrets in `VITE_*` variables - they're visible in the bundle
+- For API calls, use nginx reverse proxy with relative paths (`/api/*`)
+- See `ARDOR.md` for complete API integration documentation
 
 ### Adding Components
 
-This template includes shadcn/ui components. To add more:
-
-```bash
-npx shadcn-ui@latest add button
-npx shadcn-ui@latest add card
-# etc.
-```
+This template includes shadcn/ui components. Create additional component files in `src/components/ui/` using shadcn/ui code examples as reference.
 
 ## 🚀 Deployment
 
-The template can be deployed to any static hosting service:
+### Ardor Cloud
 
-### Vercel
-```bash
-npm run build
-vercel --prod
-```
+The template is deployed via Docker on Ardor Cloud platform. 
 
-### Netlify
-```bash
-npm run build
-# Upload dist/ folder to Netlify
-```
+- **Static-only frontend:** Deploy as is - no configuration needed
+- **Frontend with backend:** Update Dockerfile with backend service URL
 
-### GitHub Pages
-Build the project and deploy the `dist/` folder.
-
-### Docker
-
-```bash
-# Build the Docker image
-docker build -t react-frontend-template .
-
-# Run the container
-docker run -p 3000:3000 react-frontend-template
-```
-
-The application will be available at http://localhost:3000
+See `ARDOR.md` and `NGINX_REVERSE_PROXY.md` for complete documentation.
 
 ## 🧪 Testing
 
@@ -170,19 +128,11 @@ This template includes a comprehensive testing setup with Vitest and React Testi
 
 ### Running Tests
 
-```bash
-# Run tests once
-npm test
-
-# Run tests in watch mode (recommended for development)
-npm run test:watch
-
-# Run tests with UI
-npm run test:ui
-
-# Generate coverage report
-npm run test:coverage
-```
+**Available test scripts:**
+- `test` - Run tests once
+- `test:watch` - Run tests in watch mode (recommended for development)
+- `test:ui` - Run tests with UI
+- `test:coverage` - Generate coverage report
 
 ### Writing Tests
 
@@ -197,9 +147,9 @@ Key features:
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
 5. Open a Pull Request
 
 ## 📄 License

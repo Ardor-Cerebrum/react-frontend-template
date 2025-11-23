@@ -171,7 +171,7 @@ React 18 entry point. Uses `createRoot`, imports global CSS, renders App.
 ### shadcn/ui (Pre-installed)
 Form controls, Layout, Navigation, Feedback, Data display
 
-Add components: `npx shadcn-ui@latest add [component-name]`
+**Adding components:** Create new component files in `src/components/ui/` using shadcn/ui code examples as reference
 
 ### Patterns
 - Composition with `children`, render props
@@ -219,193 +219,164 @@ const response = await fetch('/api/users');
 
 ## API Integration and Reverse Proxy
 
-Use reverse proxy for all API connections (own backend, Firebase, Supabase, third-party APIs).
+**Architecture:** Frontend (nginx) → Reverse Proxy → Backend Service
 
-**Benefits:**
-- Hide API keys from browser
-- No CORS (same origin)
-- Centralized logging, rate limiting
-- Provider switching without frontend changes
+This template supports both static-only frontends and frontends with backend APIs.
 
-### Development
+**For frontends WITH backend:**
+- Use nginx reverse proxy for all API connections (your backend, Firebase, Supabase, third-party APIs)
+- Set `BACKEND_URL` in Dockerfile to backend service internal URL
 
-`.env`:
-```env
-BACKEND_URL=http://localhost:8000
-```
+**For static-only frontends:**
+- Leave `BACKEND_URL` empty in Dockerfile
+- Template handles this automatically - no configuration needed
+- `/api` calls will return 502 (expected behavior)
 
-`vite.config.ts` (pre-configured):
-```typescript
-const env = loadEnv(mode, process.cwd(), '');
+**Benefits of reverse proxy:**
+- API keys hidden from browser (security)
+- No CORS issues (same origin)
+- Single configuration point via `BACKEND_URL`
+- Backend URL changes don't require frontend code changes
 
-proxy: env.BACKEND_URL ? {
-  '/api': { target: env.BACKEND_URL, changeOrigin: true },
-  '/ws': { target: env.BACKEND_URL.replace('http', 'ws'), ws: true },
-} : undefined
-```
+### How It Works
 
-**Notes:**
-- `BACKEND_URL` (no `VITE_` prefix) - vite.config only, not exposed to browser
-- `/api` prefix preserved in dev and prod
-- Never put secrets in `VITE_*` variables (visible in browser)
+1. **Build Time:** `BACKEND_URL` from backend service data is injected into nginx.conf
+2. **Runtime:** Nginx proxies `/api` requests to backend service
+3. **Frontend Code:** Always uses relative paths starting with `/api`
 
-**Example Express proxy for external APIs:**
-```typescript
-// backend/server.ts
-import express from 'express';
-const app = express();
+### Configuration
 
-app.get('/api/*', async (req, res) => {
-  const url = `https://api.supabase.co${req.path.replace('/api', '')}`;
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${process.env.SUPABASE_SECRET_KEY}`,
-      'apikey': process.env.SUPABASE_ANON_KEY,
-    }
-  });
-  res.json(await response.json());
-});
-app.listen(8000);
-```
-
-### Production
-
-Dockerfile:
+**Dockerfile (production stage):**
 ```dockerfile
-FROM nginx:alpine
 ARG PORT=1337
-ARG BACKEND_URL=http://backend-service:8000
+ARG BACKEND_URL=""  # Leave empty for static-only frontend
 
-COPY nginx.conf /etc/nginx/nginx.conf
-RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf && \
-    sed -i "s|\${BACKEND_URL}|${BACKEND_URL}|g" /etc/nginx/nginx.conf
+# Template automatically handles empty BACKEND_URL
+# If empty: /api calls return 502 (expected for static frontend)
+# If set: /api proxied to backend service
 
-COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE ${PORT}
-ENV PORT=${PORT} BACKEND_URL=${BACKEND_URL}
-CMD ["nginx", "-g", "daemon off;"]
+# Alternative: If service variable doesn't work, hardcode URL directly:
+# ARG BACKEND_URL="http://backend-service:{port}"
 ```
 
-nginx.conf:
+**nginx.conf:**
 ```nginx
-server {
-    listen ${PORT};
-    root /usr/share/nginx/html;
+location /api {
+    proxy_pass ${BACKEND_URL};
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_connect_timeout 60s;
+}
 
-    location /api {
-        proxy_pass ${BACKEND_URL};
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-    }
-
-    location /ws {
-        proxy_pass ${BACKEND_URL}/ws;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
+location /ws {
+    proxy_pass ${BACKEND_URL}/ws;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
 }
 ```
 
-Application code:
+**Frontend code:**
 ```typescript
-// src/hooks/useUser.ts
+// Always use relative paths - nginx handles routing
 export const useUser = (id: string) => {
   return useQuery({
     queryKey: ["user", id],
     queryFn: async () => {
       const res = await fetch(`/api/users/${id}`);
-      if (!res.ok) throw new Error('Failed to fetch user');
+      if (!res.ok) throw new Error('Failed');
       return res.json();
     },
   });
 };
 ```
 
-### Trade-offs
+### Ardor Cloud Deployment
 
-**Advantages:**
-- Security: Backend URL hidden
-- No CORS (same origin)
-- Single entry point
-- Load balancing, SSL termination, rate limiting
+**For static-only frontend:**
+- No configuration needed - leave `BACKEND_URL` empty in Dockerfile
 
-**Disadvantages:**
-- Additional network hop (minimal latency)
-- More complex configuration
-- Nginx as single point of failure
+**When deploying with a backend service:**
 
-Note: Static sites without API calls can skip reverse proxy.
+1. Get backend service internal URL from service details (e.g., `data.internal_url`)
+2. Update `BACKEND_URL` value in Dockerfile:
+
+```dockerfile
+ARG BACKEND_URL=<backend_internal_url>
+```
+
+3. Trigger deployment
+
+Example for any backend API:
+- Backend exposes endpoints: `/api/users`, `/api/posts`, `/api/auth`
+- Frontend calls: `fetch('/api/users')` - nginx proxies to backend
+- WebSocket support: `/ws` location also proxied if needed
+
+### Backend Proxy for External APIs
+
+If your backend needs to proxy external services (Firebase, Supabase), handle it in backend code:
+
+```typescript
+// backend: Express example
+app.get('/api/external/*', async (req, res) => {
+  const response = await fetch(`https://api.external.com${req.path}`, {
+    headers: { 'Authorization': `Bearer ${process.env.API_SECRET}` }
+  });
+  res.json(await response.json());
+});
+```
+
+Secrets stay in backend environment variables only.
 
 ### Environment Variables
 
-Frontend `.env`:
-```env
-BACKEND_URL=http://localhost:8000
+**Frontend:** Set in Dockerfile (get backend URL from service data):
+
+```dockerfile
+ARG PORT=1337
+ARG BACKEND_URL=<backend_internal_url>
 ```
 
-Backend `.env`:
+**Backend:** Use environment variables for secrets:
+
 ```env
-SUPABASE_SECRET_KEY=your_key
-FIREBASE_ADMIN_KEY=your_key
-DATABASE_URL=postgresql://...
+DATABASE_URL=postgresql://user:pass@db:5432/mydb
+SUPABASE_SECRET_KEY=your_secret_key
+FIREBASE_ADMIN_KEY=your_admin_key
+JWT_SECRET=your_jwt_secret
 ```
 
-Docker build:
-```bash
-docker build \
-  --build-arg BACKEND_URL=http://backend:8000 \
-  -t app .
-```
+Never expose backend secrets to frontend. Use reverse proxy pattern.
 
 ## Build and Deployment
 
-Commands:
-```bash
-npm run dev      # Dev server (PORT env, default: 1337)
-npm run build    # Production build
-npm run preview  # Preview build
-```
-
-### Docker
-- Multi-stage build with Nginx
+Platform automatically builds and deploys via Docker:
+- Multi-stage build: Node.js build → Nginx production
 - Build args: `PORT` (1337), `BACKEND_URL`
-- SPA routing, caching, reverse proxy configured
-
-### Static Hosting
-- Vercel/Netlify/GitHub Pages: Deploy `dist/`
-- For API calls: Separate backend or platform edge functions
+- Nginx configured with SPA routing, caching, reverse proxy
+- Update Dockerfile to trigger redeployment
 
 ## Development Workflow
 
 ### Code Quality
-```bash
-npm run lint     # ESLint
-```
-Type checking: Integrated with TypeScript
+- ESLint configured with TypeScript support
+- Type checking integrated with TypeScript
+- Linting runs automatically in CI/CD pipeline
 
 ### Environment Variables
 
-`.env`:
+**For client-side config (feature flags, public settings):**
+
 ```env
-PORT=1337
-BACKEND_URL=http://localhost:8000  # vite.config only
-VITE_ENABLE_DEBUG=false            # Browser-accessible
+VITE_ENABLE_DEBUG=false
+VITE_APP_VERSION=1.0.0
 ```
 
 **Rules:**
-- `VITE_*` - Exposed to browser (feature flags, public settings only)
-- No `VITE_` - Node.js only (vite.config.ts)
-- Never put secrets in `VITE_*` (visible in browser)
-- Store secrets on backend only
-- Restart dev server after changes
+- `VITE_*` prefix required for browser access
+- Never put secrets in `VITE_*` (visible in browser bundle)
+- Restart dev server after `.env` changes
+- For API calls, always use reverse proxy (relative paths)
 
 ## Best Practices
 
@@ -520,40 +491,40 @@ export const LoginForm = () => {
 
 ## Troubleshooting
 
-### Build
-- TypeScript errors: `npx tsc --noEmit`
-- Dependencies: `npm install`
-- Clear cache: `rm -rf node_modules/.vite`
+### Build Issues
+- TypeScript errors: Check type definitions and tsconfig files
+- Missing dependencies: Verify package.json includes all required packages
+- Build cache issues: Clear Vite cache in `node_modules/.vite`
 
-### Styling
-- Verify Tailwind in content paths
-- Check CSS variables
-- Confirm dark mode class on html/body
+### Styling Issues
+- Tailwind not working: Verify content paths in `tailwind.config.ts`
+- Theme colors wrong: Check CSS variables in `src/index.css`
+- Dark mode not working: Confirm dark mode class on html/body element
 
-### Components
-- shadcn/ui: `npx shadcn-ui@latest diff`
-- Check Radix UI peer dependencies
-- Verify TypeScript types
+### Component Issues
+- shadcn/ui updates: Check component version compatibility
+- Missing component props: Verify Radix UI peer dependencies installed
+- Type errors: Verify TypeScript types match component interfaces
 
-### Routing
-- Routes above `*` catch-all
-- BrowserRouter wrapping
-- Component exports
+### Routing Issues
+- 404 not caught: Ensure custom routes placed above `*` catch-all route
+- Navigation broken: Verify BrowserRouter wraps all route components
+- Component not loading: Check component exports are correct
 
-### Performance
-- React DevTools Profiler
-- Bundle size: `npm run build`
-- Optimize images
-- Code splitting
+### Performance Issues
+- Slow rendering: Use React DevTools Profiler to identify bottlenecks
+- Large bundle size: Check production build output for optimization opportunities
+- Image optimization: Use appropriate formats and sizes
+- Long initial load: Implement code splitting for large components
 
-### Environment
-- `VITE_` prefix for client variables
-- `.env` in project root
-- Restart dev server after changes
+### Environment Variables
+- Variables not accessible: Ensure `VITE_` prefix for client-side variables
+- Changes not applying: Restart dev server after `.env` file changes
+- Never put API keys or secrets in `VITE_*` variables
 
-### API/Network
-- CORS: Use reverse proxy
-- 404: Check `vite.config.ts` (dev) and `nginx.conf` (prod)
-- Connection refused: Verify backend URL
-- Timeouts: Adjust nginx.conf settings
-- Exposed keys: Never use `VITE_API_URL`, use reverse proxy
+### API/Network Issues
+- CORS errors: Use nginx reverse proxy instead of direct API calls
+- 404 on refresh: Check nginx.conf SPA routing configuration
+- Connection refused: Verify `BACKEND_URL` is correctly set in Dockerfile
+- Request timeouts: Adjust timeout settings in nginx.conf
+- Exposed secrets: Always use reverse proxy, never hardcode API URLs in frontend

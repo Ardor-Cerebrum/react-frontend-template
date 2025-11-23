@@ -1,139 +1,133 @@
 # Nginx Reverse Proxy Configuration
 
-This branch adds full reverse proxy support for API calls through Nginx in production.
+## Overview
 
-## What's Added
+This template supports both static-only frontends and frontends with backend APIs.
 
-### 1. **Dockerfile Updates**
-- Added `BACKEND_URL` build argument
-- Automatic substitution of `${BACKEND_URL}` in nginx.conf during build
-- Example: `docker build --build-arg BACKEND_URL=http://backend:8000`
+**For frontends with backend:**
+- Nginx reverse proxy routes API/WebSocket requests to backend services
+- All configuration via Dockerfile - no manual nginx editing required
 
-### 2. **Nginx Configuration Updates**
-- `/api/*` - Proxies all API requests to backend
-- `/ws` - WebSocket support with proper headers
-- Proper timeout and buffering configuration
-- All proxy headers for backend to identify original request
+**For static-only frontends:**
+- Leave `BACKEND_URL` empty - template handles this automatically
+- `/api` calls return 502 (expected behavior for static frontend)
 
-## Usage
+**Architecture:** Frontend (nginx) → `/api/*` or `/ws` → Backend Service
 
-### Building with Backend URL
+## How It Works
 
-```bash
-# With backend URL (enables reverse proxy)
-docker build \
-  --build-arg PORT=1337 \
-  --build-arg BACKEND_URL=http://backend-service:8000 \
-  -t my-app .
+1. **Build Time:** `BACKEND_URL` injected into nginx.conf via sed substitution
+2. **Runtime:** Nginx proxies matching requests to backend
+3. **Frontend Code:** Always uses relative paths (`/api/users`, `/ws`)
 
-# Without backend URL (static-only mode)
-docker build \
-  --build-arg PORT=1337 \
-  -t my-app .
+## Configuration
+
+**For static-only frontend:**
+- No changes needed - `BACKEND_URL` already empty in Dockerfile
+
+**For frontend with backend:**
+- Update Dockerfile with backend service URL:
+
+```dockerfile
+ARG PORT=1337
+ARG BACKEND_URL=<backend_internal_url>
 ```
 
-### Development vs Production
+**Build Arguments:**
+- `PORT` - Nginx listen port (default: 1337)
+- `BACKEND_URL` - Backend service internal URL (optional, leave empty for static frontend)
 
-**Development (local):**
-- Set `BACKEND_URL` in `.env`
-- Vite proxy handles `/api/*` requests
-- Points to `http://localhost:8000`
-
-```env
-# .env
-BACKEND_URL=http://localhost:8000
-```
-
-**Production (Docker):**
-- Set `BACKEND_URL` as build argument
-- Nginx proxy handles `/api/*` requests
-- Points to internal service URL
-
-```bash
-docker build --build-arg BACKEND_URL=http://backend:8000 -t app .
+**Alternative approach:** If service variable doesn't work, hardcode URL directly in Dockerfile:
+```dockerfile
+ARG BACKEND_URL="http://backend-service:{PORT}"
 ```
 
 ## Frontend Code
 
-No changes needed in frontend code - use relative paths:
+No configuration needed - use relative paths:
 
 ```typescript
-// Always use relative paths
+// API calls
 const response = await fetch('/api/users');
 
 // WebSocket
-const ws = new WebSocket('ws://your-domain/ws');
+const ws = new WebSocket(`ws://${window.location.host}/ws`);
 ```
 
 ## Configuration Details
 
 ### API Proxy (`/api`)
-- **Target**: `${BACKEND_URL}` (set during build)
+
+```nginx
+location /api {
+    proxy_pass ${BACKEND_URL};
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_connect_timeout 60s;
+}
+```
+
 - **Path preserved**: `/api/users` → `${BACKEND_URL}/api/users`
 - **Timeouts**: 60s for connect/send/read
-- **Buffering**: Enabled with 32KB buffers
+- **Headers**: Forwards original request info to backend
 
 ### WebSocket Proxy (`/ws`)
-- **Target**: `${BACKEND_URL}/ws`
-- **Upgrade support**: Full WebSocket upgrade headers
+
+```nginx
+location /ws {
+    proxy_pass ${BACKEND_URL}/ws;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+}
+```
+
 - **Long-lived**: 1-hour timeouts for persistent connections
+- **Full upgrade**: WebSocket-specific headers configured
 
-## Important Notes
+## Security Benefits
 
-⚠️ **If `BACKEND_URL` is empty:**
-- API requests to `/api/*` will return 502 Bad Gateway
-- This is expected if you're running frontend-only
-- To disable proxy blocks, comment them out in `nginx.conf` or remove this branch
-
-✅ **Security Benefits:**
-- Backend URL hidden from browser
-- No CORS issues (same origin)
-- Centralized request logging
-- Rate limiting possible at Nginx level
-
-## Testing
-
-### Test Static Mode (no backend)
-```bash
-docker build -t test-app .
-docker run -p 8080:1337 test-app
-# Visit http://localhost:8080 - should work for static content
-# API calls will fail with 502 - this is expected
-```
-
-### Test with Backend
-```bash
-# Build with backend URL
-docker build --build-arg BACKEND_URL=http://backend:8000 -t test-app .
-
-# Run (make sure backend is accessible)
-docker run -p 8080:1337 test-app
-
-# Test API endpoint
-curl http://localhost:8080/api/health
-```
+- Backend URL hidden from browser (not in frontend bundle)
+- No CORS issues (same origin for frontend and backend)
+- Centralized logging and monitoring point
+- Rate limiting possible at nginx level
 
 ## Ardor Cloud Deployment
 
-When deploying to Ardor Cloud with backend service:
+**For static-only frontend:**
+- No configuration needed - deploy as is
 
-```bash
-# Backend service will have internal URL like:
-# http://service-<id>:8000
+**For frontend with backend:**
+1. Get backend service internal URL from backend service data
+2. Update Dockerfile with the URL:
 
-docker build \
-  --build-arg BACKEND_URL=http://service-66e4ccfd-6a5c-480a-a6ca-daec184b5273:8000 \
-  -t ardor-app .
+```dockerfile
+ARG BACKEND_URL=<backend_internal_url>
 ```
 
-## Reverting to Static-Only
+3. Trigger deployment
 
-If you want to use the template without reverse proxy:
+The internal URL is automatically provided by the platform for each service.
 
-1. Switch back to `main` branch
-2. Or comment out `/api` and `/ws` location blocks in `nginx.conf`
+## Troubleshooting
 
-## Questions?
+**502 Bad Gateway on /api calls:**
+- Verify `BACKEND_URL` is correctly set in Dockerfile
+- Check backend service is running and accessible
+- Check service logs for nginx errors
 
-See `ARDOR.md` section "API Integration and Reverse Proxy" for detailed architecture explanation.
+**WebSocket connection fails:**
+- Verify `/ws` location block in nginx.conf
+- Check backend supports WebSocket on `/ws` path
+- Ensure proper upgrade headers configured
 
+**Changes not taking effect:**
+- Trigger redeployment after Dockerfile changes
+- nginx.conf is processed at build time via sed substitution
+- Verify Dockerfile ARG values are correct
+
+## Implementation Files
+
+- `Dockerfile` - Multi-stage build with sed substitution
+- `nginx.conf` - Template with `${BACKEND_URL}` and `${PORT}` placeholders
+- See `ARDOR.md` for complete documentation

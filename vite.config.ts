@@ -15,9 +15,9 @@ export default defineConfig(({ mode }) => {
       port: parseInt(env.PORT || '1337'),
       allowedHosts: [".ardor.cloud"],
       
-      // Reverse proxy for API calls during development
+      // Reverse proxy for API calls during development (optional)
       // Set BACKEND_URL in .env (without VITE_ prefix for security)
-      // Example: BACKEND_URL=http://localhost:8000
+      // Get backend URL from backend service data
       proxy: env.BACKEND_URL ? {
         '/api': {
           target: env.BACKEND_URL,
