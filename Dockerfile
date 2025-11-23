@@ -18,19 +18,15 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Build args for nginx configuration
+# Define ARG for port
 ARG PORT=1337
-ARG BACKEND_URL=""  # Leave empty for static-only, or set default: "http://backend:{PORT}}"
 
-# Copy nginx configuration template and substitute variables
+
+# Copy nginx configuration template
 COPY nginx.conf /etc/nginx/nginx.conf
-RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf && \
-    if [ -z "$BACKEND_URL" ]; then \
-      # If no backend, use dummy URL (502 on /api calls - expected for static frontend)
-      sed -i "s|\${BACKEND_URL}|http://127.0.0.1:9999|g" /etc/nginx/nginx.conf; \
-    else \
-      sed -i "s|\${BACKEND_URL}|${BACKEND_URL}|g" /etc/nginx/nginx.conf; \
-    fi
+
+# Replace placeholder with actual port value during build
+RUN sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/nginx.conf
 
 # Copy built app from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
@@ -38,9 +34,8 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Expose configurable port
 EXPOSE ${PORT}
 
-# Define ENV for runtime
+#Define ENV for port
 ENV PORT=${PORT}
-ENV BACKEND_URL=${BACKEND_URL}
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
