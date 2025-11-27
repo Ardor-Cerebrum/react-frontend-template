@@ -10,6 +10,11 @@ export const config = {
   // Environment
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
+
+  // Ardor Logging
+  ardorLogsApiUrl: import.meta.env.VITE_ARDOR_LOGS_API_URL,
+  ardorSubmitLogsKey: import.meta.env.VITE_ARDOR_SUBMIT_LOGS_KEY,
+  ardorServiceId: import.meta.env.VITE_ARDOR_SERVICE_ID,
 } as const;
 
 // Type-safe environment variable access
