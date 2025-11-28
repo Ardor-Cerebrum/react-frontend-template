@@ -205,3 +205,66 @@ Key features:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📋 Logging
+
+The template includes a comprehensive logging system that formats all logs consistently and optionally sends them to a centralized backend.
+
+### Log Format
+
+All logs follow the format:
+```
+LEVEL: TIMESTAMP - MESSAGE
+```
+
+Example:
+```
+INFO: 2025-11-27T12:34:56.789Z - User logged in successfully
+WARNING: 2025-11-27T12:34:57.123Z - Session expiring soon
+ERROR: 2025-11-27T12:34:58.456Z - Failed to fetch user data
+```
+
+### Features
+
+- **Console interception** — All `console.log/info/warn/error` calls (including from libraries) are formatted
+- **Remote logging** — Logs are batched and sent to Ardor backend for centralized storage
+- **Global error handling** — Uncaught errors and unhandled promise rejections are automatically logged
+- **Reliable delivery** — Uses `sendBeacon` for page unload, retry with exponential backoff
+- **Configurable levels** — Separate thresholds for console and remote logging
+
+### Usage
+
+```typescript
+import { logger } from "@/lib/logger";
+
+// Basic logging
+logger.debug("Detailed debug info");
+logger.info("User action completed");
+logger.warn("Something might be wrong");
+logger.error("Operation failed", { details: "..." });
+
+// Configuration
+logger.setLevel('WARN');           // Console: only WARN and ERROR
+logger.setRemoteLevel('ERROR');    // Remote: only ERROR
+logger.setRemoteEnabled(false);    // Disable remote logging
+logger.flush();                    // Force send buffered logs
+```
+
+### Environment Variables
+
+For remote logging to work, configure these variables:
+
+```bash
+# Automatically set by Ardor platform
+VITE_ARDOR_SUBMIT_LOGS_KEY=your-api-key
+VITE_ARDOR_SERVICE_ID=your-service-id
+```
+
+### Log Levels
+
+| Level | Console (dev) | Console (prod) | Remote (dev) | Remote (prod) |
+|-------|---------------|----------------|--------------|---------------|
+| DEBUG | ✅ | ❌ | ✅ | ❌ |
+| INFO | ✅ | ✅ | ✅ | ❌ |
+| WARNING | ✅ | ✅ | ✅ | ✅ |
+| ERROR | ✅ | ✅ | ✅ | ✅ |
